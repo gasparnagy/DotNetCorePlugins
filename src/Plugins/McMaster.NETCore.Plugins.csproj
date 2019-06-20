@@ -13,6 +13,7 @@ files required to load .dll files.
     </PackageDescription>
     <PackageTags>.NET Core;plugins</PackageTags>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);1591</WarningsNotAsErrors>
+    <PackageId>DeveroomFix.McMaster.NETCore.Plugins</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
