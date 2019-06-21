@@ -111,7 +111,7 @@ namespace McMaster.NETCore.Plugins
 
             if (File.Exists(depsJsonFile))
             {
-                builder.AddDependencyContext(depsJsonFile);
+                builder.AddDependencyContext(depsJsonFile, loaderOptions.HasFlag(PluginLoaderOptions.IncludeCompileLibraries));
             }
 
             builder.SetBaseDirectory(baseDir);

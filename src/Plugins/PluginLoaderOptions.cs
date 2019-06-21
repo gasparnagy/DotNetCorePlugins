@@ -19,6 +19,11 @@ namespace McMaster.NETCore.Plugins
         /// This does not guarantee types will unify.
         /// </para>
         /// </summary>
-        PreferSharedTypes,
+        PreferSharedTypes = 1,
+
+        /// <summary>
+        /// Whether to include the compile dependencies to the context.
+        /// </summary>
+        IncludeCompileLibraries = 2
     }
 }

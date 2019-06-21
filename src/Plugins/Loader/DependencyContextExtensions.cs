@@ -43,8 +43,9 @@ namespace McMaster.NETCore.Plugins.Loader
         /// </summary>
         /// <param name="builder">The builder.</param>
         /// <param name="depsFilePath">The full path to the .deps.json file.</param>
+        /// <param name="includeCompileLibraries">Whether to include the compile dependencies to the context. Default: false</param>
         /// <returns>The builder.</returns>
-        public static AssemblyLoadContextBuilder AddDependencyContext(this AssemblyLoadContextBuilder builder, string depsFilePath)
+        public static AssemblyLoadContextBuilder AddDependencyContext(this AssemblyLoadContextBuilder builder, string depsFilePath, bool includeCompileLibraries = false)
         {
 
             var reader = new DependencyContextJsonReader();
@@ -52,7 +53,7 @@ namespace McMaster.NETCore.Plugins.Loader
             {
                 var deps = reader.Read(file);
                 builder.SetBaseDirectory(Path.GetDirectoryName(depsFilePath));
-                builder.AddDependencyContext(deps);
+                builder.AddDependencyContext(deps, includeCompileLibraries);
             }
 
             return builder;
@@ -102,8 +103,9 @@ namespace McMaster.NETCore.Plugins.Loader
         /// </summary>
         /// <param name="builder">The builder.</param>
         /// <param name="dependencyContext">The dependency context.</param>
+        /// <param name="includeCompileLibraries">Whether to include the compile dependencies to the context. Default: false</param>
         /// <returns>The builder.</returns>
-        public static AssemblyLoadContextBuilder AddDependencyContext(this AssemblyLoadContextBuilder builder, DependencyContext dependencyContext)
+        public static AssemblyLoadContextBuilder AddDependencyContext(this AssemblyLoadContextBuilder builder, DependencyContext dependencyContext, bool includeCompileLibraries = false)
         {
             var ridGraph = dependencyContext.RuntimeGraph.Any()
                ? dependencyContext.RuntimeGraph
@@ -154,6 +156,14 @@ namespace McMaster.NETCore.Plugins.Loader
                 builder.AddNativeLibrary(native);
             }
 
+            if (includeCompileLibraries)
+            {
+                foreach (var managedLibrary in dependencyContext.ResolveCompileLibraries())
+                {
+                    builder.AddManagedLibrary(managedLibrary);
+                }
+            }
+
             return builder;
         }
 
@@ -180,6 +190,13 @@ namespace McMaster.NETCore.Plugins.Loader
                     // some packages include symbols alongside native assets, such as System.Native.a or pwshplugin.pdb
                    where PlatformInformation.NativeLibraryExtensions.Contains(Path.GetExtension(assetPath), StringComparer.OrdinalIgnoreCase)
                    select NativeLibrary.CreateFromPackage(library.Name, library.Version, assetPath);
+        }
+
+        private static IEnumerable<ManagedLibrary> ResolveCompileLibraries(this DependencyContext depContext)
+        {
+            return from library in depContext.CompileLibraries.Where(cl => !depContext.RuntimeLibraries.Any(rl => cl.Name.Equals(rl.Name)))
+                   from libraryAssembly in library.Assemblies.Where(a => a.StartsWith("lib", StringComparison.OrdinalIgnoreCase))
+                   select ManagedLibrary.CreateFromPackage(library.Name, library.Version, libraryAssembly);
         }
 
         private static IEnumerable<string> GetRids(RuntimeFallbacks runtimeGraph)
